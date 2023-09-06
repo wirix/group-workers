@@ -3,7 +3,7 @@ import { tokenModel } from '../models/token.model.js';
 
 class TokenService {
 	generateTokens(payload) {
-		const accessToken = jwt.sign(payload, process.env.JWT_ACCESS_SECRET, { expiresIn: '30m' });
+		const accessToken = jwt.sign(payload, process.env.JWT_ACCESS_SECRET, { expiresIn: '30s' });
 		const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET, { expiresIn: '30d' });
 		return { accessToken, refreshToken };
 	}
@@ -27,6 +27,11 @@ class TokenService {
 	validateAccessToken(accessToken) {
 		const token = jwt.verify(accessToken, process.env.JWT_ACCESS_SECRET);
 		return token;
+	}
+
+	async removeToken(token) {
+		const userData = await tokenModel.deleteOne({ token });
+		return userData;
 	}
 }
 

@@ -1,5 +1,6 @@
 import { UserDto } from '../dtos/user.dto.js';
 import { ApiError } from '../exceptions/api.error.js';
+import { tokenModel } from '../models/token.model.js';
 import { userModel } from '../models/user.model.js';
 import { tokenService } from './token.service.js';
 import bcrypt from 'bcrypt';
@@ -62,13 +63,33 @@ class UserService {
 		};
 	}
 
-	// async logout(req, res, next) {
-	// 	return res.json({ '0': 13 });
-	// }
+	async logout(refreshToken) {
+		const token = await tokenService.removeToken(refreshToken);
+		return token;
+	}
 
-	// async refresh(req, res, next) {
+	async refresh(refreshToken) {
+		const user = tokenService.validateRefreshToken(refreshToken);
+		
+		if (!user) {
+			throw ApiError.UnauthorizedError();
+		}
 
-	// }
+		const userDto = new UserDto(user);
+
+		const tokens = tokenService.generateTokens({ ...userDto });
+		if (!tokens) {
+			throw ApiError.UnauthorizedError();
+		}
+		await tokenService.saveToken(userDto.id, refreshToken);
+
+		const { password: _, ...userData } = userDto;
+
+		return {
+			...userData,
+			...tokens
+		};
+	}
 }
 
 export const userService = new UserService();
